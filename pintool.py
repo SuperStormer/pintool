@@ -1,5 +1,5 @@
-#!/usr/bin/env/python
-#coding: utf8 
+#!/usr/bin/env python3
+#coding: utf8
 #
 #prog_name= 'pintool.py'
 #prog_version = '0.3'
@@ -7,217 +7,232 @@
 #prog_author = 'Eduardo Garcia Melia'
 #prog_author_mail = 'wagiro@gmail.com'
 
-
 import sys
-import string as s
+import string
 import subprocess
 import argparse
-import re
-
-
-#configure by the user
-PIN = "./pin-3.11-97998-g7ecce2dac-gcc-linux/pin"
-INSCOUNT32 = "./pin-3.11-97998-g7ecce2dac-gcc-linux/source/tools/ManualExamples/obj-ia32/inscount0.so"
-INSCOUNT64 = "./pin-3.11-97998-g7ecce2dac-gcc-linux/source/tools/ManualExamples/obj-intel64/inscount0.so"
-
+from pathlib import Path
+#configuration by the user
+directory = Path(__file__).parent
+PIN = directory.joinpath("pin/pin")
+INSCOUNT32 = directory.joinpath("pin/source/tools/ManualExamples/obj-ia32/inscount0.so")
+INSCOUNT64 = directory.joinpath("pin/source/tools/ManualExamples/obj-intel64/inscount0.so")
 
 def start():
 	
-	parser = argparse.ArgumentParser(prog='pintool.py')
-	parser.add_argument('-e', dest='study', action='store_true', default=False, help='Study the password length, for example -e -l 40, with 40 characters')
-	parser.add_argument('-l', dest='len', type=str, nargs=1, default='10', help='Length of password (Default: 10 )')
-	parser.add_argument('-c', dest='number', type=str, default=1, help="Charset definition for brute force\n (1-Lowercase,\n2-Uppecase,\n3-Numbers,\n4-Hexadecimal,\n5-Punctuation,\n6-All)")
-	parser.add_argument('-b', dest='character', type=str, nargs=1, default='', help='Add characters for the charset, example -b _-')
-	parser.add_argument('-a', dest='arch', type=str, nargs=1, default='32', help='Program architecture 32 or 64 bits, -b 32 or -b 64 ')
-	parser.add_argument('-i', dest='initpass', type=str, nargs=1, default='', help='Inicial password characters, example -i CTF{')
-	parser.add_argument('-s', dest='simbol', type=str, nargs=1, default='_', help='Simbol for complete all password (Default: _ )')
-	parser.add_argument('-d', dest='expression', type=str, nargs=1, default='!= 0', help="Difference between instructions that are successful or not (Default: != 0, example -d '== -12', -d '=> 900', -d '<= 17' or -d '!= 32')")
-	parser.add_argument('-r', dest='reverse', action='store_true', default=False, help='Reverse order. Bruteforce from the last character')
-	parser.add_argument('Filename',help='Program for playing with Pin Tool')
-
-
+	parser = argparse.ArgumentParser()
+	parser.add_argument(
+		"-d",
+		"--detect",
+		action='store_true',
+		default=False,
+		help='Detect the password length. For example -e -l 40, with 40 characters'
+	)
+	parser.add_argument('-l', dest='len', type=int, default=10, help='Length of password')
+	parser.add_argument(
+		'-c',
+		"--charset",
+		dest='number',
+		default="1",
+		help=
+		"Charset definition for brute force\n (1-Lowercase,\n2-Uppercase,\n3-Numbers,\n4-Hexadecimal,\n5-Punctuation,\n6-Printable)"
+	)
+	parser.add_argument(
+		'-b', "--character", default='', help='Add characters for the charset. For example, -b _-'
+	)
+	parser.add_argument(
+		'-a', "--arch", default='64', help='Program architecture', choices=["32", "64"]
+	)
+	parser.add_argument(
+		'-i', "--initpass", default='', help='Initial password characters. For example, -i CTF{'
+	)
+	parser.add_argument('-s', "--symbol", default='-', help='Symbol used as password placeholder')
+	parser.add_argument(
+		'-e',
+		"--expression",
+		default='!= 0',
+		help=(
+		"Difference between instructions that are successful or not."
+		" For example: -d '== -12', -d '=> 900', -d '<= 17' or -d '!= 32'"
+		)
+	)
+	parser.add_argument(
+		'-r',
+		dest='reverse',
+		action='store_true',
+		default=False,
+		help='Reverse order, bruteforcing starting from the last character'
+	)
+	parser.add_argument(
+		'-g',
+		"--argv",
+		dest='argv',
+		action='store_true',
+		default=False,
+		help='Pass argument via command-line arguments instead of stdin.'
+	)
+	parser.add_argument('filename', type=Path, help='Program for playing with Pin Tool')
+	
 	if len(sys.argv) < 2:
 		parser.print_help()
 		sys.exit()
 	
-	args = parser.parse_args()
+	return parser.parse_args()
 
-	return args
-
-
-def getCharset(num,addchar):
-	char = ""
-	charset = { '1': s.ascii_lowercase, 
-				'2': s.ascii_uppercase,
-				'3': s.digits,
-				'4': s.hexdigits,
-				'5': s.punctuation,
-				'6': s.printable}
+def get_charset(charset_num, addchar):
+	charsets = {
+		'1': string.ascii_lowercase,
+		'2': string.ascii_uppercase,
+		'3': string.digits,
+		'4': string.hexdigits,
+		'5': string.punctuation,
+		'6': string.printable
+	}
 	
+	return "".join(charsets[n] for n in charset_num.split(",")) + ''.join(addchar)
 
-	if num is 1:
-		return charset['1']
-	else:
-		num = num.split(',')
-
-	for i in num:
-		if 1 <= int(i) <= 6:
-			i= '%s' % i
-			char += charset[i]
-		else:
-			print "Number %s out of range." % (i)
-
-	return char+''.join(addchar)
-
-
-def pin(passwd):
+def pin(filename, inscount, passwd, argv=False):
 	try:
-		command = "echo " + passwd + " | " + PIN + " -t " + INSCOUNT + " -- ./"+ args.Filename + " ; cat inscount.out"
-		output = subprocess.check_output(command,shell=True,stderr=subprocess.PIPE)
-	except:
-		print "Unexpected error:", sys.exc_info()[0]
+		if argv:
+			subprocess.run([
+				PIN,
+				"-t",
+				inscount,
+				"--",
+			])
+		subprocess.run(
+			[PIN, "-t", inscount, "--", filename],
+			input=passwd.encode() + b"\n",
+			check=True,
+			stdout=subprocess.PIPE,
+			stderr=subprocess.PIPE
+		)
+		with open("inscount.out") as f:
+			output = f.read()
+			return int(output.partition(" ")[2])
+	except subprocess.CalledProcessError as e:
+		print("Stdout:")
+		print(e.stdout.decode())
+		print("Stderr:")
+		print(e.stderr.decode())
 		raise
 
-	output = re.findall(r"Count ([\w.-]+)", output)
-
-	return int(''.join(output))
-
-
-def lengthdetect(passlen):
-	inicialdifference = 0
-	for i in range(1,passlen+1):
-		password = "_"*i
-		inscount = pin(password)
+def detect_length(filename, inscount_file, max_len, argv=False):
+	Initialdifference = 0
+	for i in range(1, max_len + 1):
+		password = "_" * i
+		inscount = pin(filename, inscount_file, password, argv)
 		
-		if inicialdifference == 0:
-			inicialdifference = inscount
+		if Initialdifference == 0:
+			Initialdifference = inscount
+		
+		print(
+			"%s = with %d characters difference %d instructions" %
+			(password, i, inscount - Initialdifference)
+		)
 
-		print "%s = with %d characters difference %d instructions" %(password, i, inscount-inicialdifference)
-
-def addchar(initpass, char):
-
+def add_char(initpass, char):
+	
 	if args.reverse:
 		initpass = char + initpass
 	else:
 		initpass += char
-
+	
 	return initpass
 
-
-
-def solve(initpass,passlen,symbfill,charset,expression):
+def solve(
+	filename, inscount_file, passlen, charset, expression, symbfill="-", initpass="", argv=False
+):
 	
-
 	initlen = len(initpass)
-	
-	for i in range(initlen,passlen):
-	
-
+	comparison, number = expression.split(" ")
+	number = int(number)
+	try:
+		cmp_func = {
+			"!=": lambda diff: diff != number,
+			"<=": lambda diff: diff <= number,
+			">=": lambda diff: diff >= number,
+			"=>": lambda diff: diff >= number,
+			"==": lambda diff: diff == number
+		}[comparison]
+	except KeyError:
+		print("Unknown value for -d option")
+		sys.exit()
+	for i in range(initlen, passlen):
+		
 		if args.reverse:
-			tempassword = symbfill*(passlen-i) + initpass
+			tempassword = symbfill * (passlen - i) + initpass
 		else:
-			tempassword = initpass + symbfill*(passlen-i)
-
-		inicialdifference = 0
-
+			tempassword = initpass + symbfill * (passlen - i)
+		
+		initial_difference = 0
+		
 		if args.reverse:
 			i = passlen - i
-
+		
 		for char in charset:
-		
+			
 			if args.reverse:
-				password = tempassword[:i-1] + '\\'+char + tempassword[i:]
+				password = tempassword[:i - 1] + char + tempassword[i:]
 			else:
-				password = tempassword[:i] + '\\'+char + tempassword[i+1:]
-				
-			inscount = pin(password)
-		
-			newpass = password.replace("\\","", 1)
-
-			if inicialdifference == 0:
-				inicialdifference = inscount
-
-			difference = inscount-inicialdifference
-
-			print "%s = %d difference %d instructions" %(newpass, inscount, difference)
-
+				password = tempassword[:i] + char + tempassword[i + 1:]
+			
+			inscount = pin(filename, inscount_file, password, argv)
+			
+			if initial_difference == 0:
+				initial_difference = inscount
+			
+			difference = inscount - initial_difference
+			print("%s = %d difference %d instructions" % (password, inscount, difference))
+			
 			sys.stdout.write("\033[F")
-
-			if "!=" in expression:
-				if difference != int(number):
-					print "%s = %d difference %d instructions" %(newpass, inscount, difference)
-					initpass = addchar(initpass, char)
-					break
-			elif "==" in expression:
-				if difference == int(number):
-					print "%s = %d difference %d instructions" %(newpass, inscount, difference)
-					initpass = addchar(initpass, char)
-					break
-			elif "<=" in expression:
-				if difference <= int(number):
-					print "%s = %d difference %d instructions" %(newpass, inscount, difference)
-					initpass = addchar(initpass, char)
-					break
-			elif "=>" in expression:
-				if difference >= int(number):
-					print "%s = %d difference %d instructions" %(newpass, inscount, difference)
-					initpass = addchar(initpass, char)
-					break
-			else:
-				print "Unknown value for -d option"
-				sys.exit()
-
-			if char == charset[-1]:
-				print "\n\nPassword not found, try to change charset...\n"
-				sys.exit()	
+			if cmp_func(difference):
+				print("%s = %d difference %d instructions" % (password, inscount, difference))
+				initpass = add_char(initpass, char)
+				break
+		else:
+			print("Password not found, try to change charset...")
+			sys.exit()
 	
-	
-	return password.replace("\\","",1)
-
+	return password
 
 if __name__ == '__main__':
-
+	
 	args = start()
-
-	initpass = ''.join(args.initpass)
-	passlen = int(''.join(args.len))
-	symbfill = ''.join(args.simbol)
-	charset = symbfill+getCharset(args.number,args.character)
-	arch = ''.join(args.arch)
-	expression = ''.join(args.expression).rstrip()
-	number = expression.split()[1]
-	study = args.study
-
-
+	
+	initpass = args.initpass
+	passlen = args.len
+	symbfill = args.symbol
+	charset = symbfill + get_charset(args.number, args.character)
+	arch = args.arch
+	expression = args.expression.strip()
+	detect = args.detect
+	argv = args.argv
+	filename = str(args.filename.resolve())
 	if len(initpass) >= passlen:
-		print "The length of init password must be less than password length."
+		print("The length of init password must be less than password length.")
 		sys.exit()
-
-
+	
 	if passlen > 64:
-		print "The password must be less than 64 characters."
+		print("The password must be less than 64 characters.")
 		sys.exit()
-
-
+	
 	if len(symbfill) > 1:
-		print "Only one symbol is allowed."
+		print("Only one symbol is allowed.")
 		sys.exit()
-
-
+	
 	if arch == "32":
-		INSCOUNT = INSCOUNT32
+		inscount_file = INSCOUNT32
 	elif arch == "64":
-		INSCOUNT = INSCOUNT64
+		inscount_file = INSCOUNT64
 	else:
-		print "Unknown architecture"
+		print("Unknown architecture")
 		sys.exit()
-
-
-	if study is True:
-		lengthdetect(passlen)
+	
+	if detect is True:
+		detect_length(filename, inscount_file, passlen, argv)
 		sys.exit()
-
-
-	password = solve(initpass,passlen,symbfill,charset,expression)
-
-	print "Password: ", password
+	password = solve(
+		filename, inscount_file, passlen, charset, expression, symbfill, initpass, argv
+	)
+	print("Password: ", password)

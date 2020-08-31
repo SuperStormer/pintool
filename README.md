@@ -47,7 +47,7 @@ optional arguments:
 ### Examples
 **Baleful - picoCTF 2014**
 ```sh
-$python pintool.py -l 30 -c 1,2,3 -b _{} -s - baleful
+$python3 pintool.py -l 30 -c 1,2,3 -b _{} -s - examples/baleful
 p----------------------------- = 763799 difference -12 instructions
 pa---------------------------- = 763787 difference -12 instructions
 pac--------------------------- = 763775 difference -12 instructions
@@ -84,7 +84,7 @@ packers_and_vms_and_xors_oh_my
 **Reverse 400 - Hack You 2014**
 
 ```sh
-$python pintool.py -l 37 -c 4 -i CTF{ -b }_ -s - -d '=> 651' reverse400
+$ python3 pintool.py -l 37 -c 4 -i CTF{ -b }_ -s - -e '=> 651' examples/reverse400
 CTF{c________________________________ = 1057174 difference 1300 instructions
 CTF{c9_______________________________ = 1058474 difference 1300 instructions
 CTF{c9f______________________________ = 1059774 difference 1300 instructions
@@ -121,7 +121,7 @@ CTF{c9fd99de8eb082c66c4ce4039f19c4fc}
 **wyvern 500 - CSAW CTF 2015**
 
 ```sh
-$python pintool.py -c 1,2,3 -b _ -s - -a 64 -l 28 wyvern
+$ python3 pintool.py -c 1,2,3 -b _ -s - -a 64 -l 28 examples/wyvern
 d--------------------------- = 1505212 difference 10332 instructions
 dr-------------------------- = 1515830 difference 10618 instructions
 dr4------------------------- = 1521965 difference 6135 instructions
