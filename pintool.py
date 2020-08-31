@@ -7,18 +7,20 @@
 #prog_author = 'Eduardo Garcia Melia'
 #prog_author_mail = 'wagiro@gmail.com'
 
-import sys
+import argparse
+import atexit
 import string
 import subprocess
-import argparse
+import sys
 from pathlib import Path
+
 #configuration by the user
 directory = Path(__file__).parent
 PIN = directory.joinpath("pin/pin")
 INSCOUNT32 = directory.joinpath("pin/source/tools/ManualExamples/obj-ia32/inscount0.so")
 INSCOUNT64 = directory.joinpath("pin/source/tools/ManualExamples/obj-intel64/inscount0.so")
 
-def start():
+def get_args():
 	
 	parser = argparse.ArgumentParser()
 	parser.add_argument(
@@ -26,16 +28,18 @@ def start():
 		"--detect",
 		action='store_true',
 		default=False,
-		help='Detect the password length. For example -e -l 40, with 40 characters'
+		help='Detect the password length. For example -d -l 40, with 40 characters'
 	)
 	parser.add_argument('-l', dest='len', type=int, default=10, help='Length of password')
 	parser.add_argument(
 		'-c',
 		"--charset",
 		dest='number',
-		default="1",
-		help=
-		"Charset definition for brute force\n (1-Lowercase,\n2-Uppercase,\n3-Numbers,\n4-Hexadecimal,\n5-Punctuation,\n6-Printable)"
+		default="0",
+		help=(
+		"Charset definition for brute force"
+		" (0-Default, 1-Lowercase, 2-Uppercase, 3-Numbers, 4-Hexadecimal, 5-Punctuation, 6-Printable)"
+		)
 	)
 	parser.add_argument(
 		'-b', "--character", default='', help='Add characters for the charset. For example, -b _-'
@@ -53,7 +57,7 @@ def start():
 		default='!= 0',
 		help=(
 		"Difference between instructions that are successful or not."
-		" For example: -d '== -12', -d '=> 900', -d '<= 17' or -d '!= 32'"
+		" For example: -e '== -12', -e '=> 900', -e '<= 17' or -e '!= 32'"
 		)
 	)
 	parser.add_argument(
@@ -81,6 +85,7 @@ def start():
 
 def get_charset(charset_num, addchar):
 	charsets = {
+		'0': string.ascii_lowercase + "_{}" + string.digits + string.ascii_uppercase,
 		'1': string.ascii_lowercase,
 		'2': string.ascii_uppercase,
 		'3': string.digits,
@@ -117,10 +122,10 @@ def pin(filename, inscount, passwd, argv=False):
 		print(e.stderr.decode())
 		raise
 
-def detect_length(filename, inscount_file, max_len, argv=False):
+def detect_length(filename, inscount_file, max_len, symbol="-", argv=False):
 	Initialdifference = 0
 	for i in range(1, max_len + 1):
-		password = "_" * i
+		password = symbol * i
 		inscount = pin(filename, inscount_file, password, argv)
 		
 		if Initialdifference == 0:
@@ -196,9 +201,14 @@ def solve(
 	
 	return password
 
+def cleanup():
+	path = Path("inscount.out")
+	if path.exists():
+		path.unlink()
+
 if __name__ == '__main__':
 	
-	args = start()
+	args = get_args()
 	
 	initpass = args.initpass
 	passlen = args.len
@@ -209,6 +219,7 @@ if __name__ == '__main__':
 	detect = args.detect
 	argv = args.argv
 	filename = str(args.filename.resolve())
+	
 	if len(initpass) >= passlen:
 		print("The length of init password must be less than password length.")
 		sys.exit()
@@ -229,8 +240,10 @@ if __name__ == '__main__':
 		print("Unknown architecture")
 		sys.exit()
 	
+	atexit.register(cleanup)
+	
 	if detect is True:
-		detect_length(filename, inscount_file, passlen, argv)
+		detect_length(filename, inscount_file, passlen, symbfill, argv)
 		sys.exit()
 	password = solve(
 		filename, inscount_file, passlen, charset, expression, symbfill, initpass, argv
