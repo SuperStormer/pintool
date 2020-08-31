@@ -50,7 +50,7 @@ def get_args():
 	parser.add_argument(
 		'-i', "--initpass", default='', help='Initial password characters. For example, -i CTF{'
 	)
-	parser.add_argument('-s', "--symbol", default='-', help='Symbol used as password placeholder')
+	parser.add_argument('-s', "--symbol", default='*', help='Symbol used as password placeholder')
 	parser.add_argument(
 		'-e',
 		"--expression",
@@ -97,30 +97,24 @@ def get_charset(charset_num, addchar):
 	return "".join(charsets[n] for n in charset_num.split(",")) + ''.join(addchar)
 
 def pin(filename, inscount, passwd, argv=False):
-	try:
-		if argv:
-			subprocess.run([
-				PIN,
-				"-t",
-				inscount,
-				"--",
-			])
+	if argv:
 		subprocess.run(
-			[PIN, "-t", inscount, "--", filename],
-			input=passwd.encode() + b"\n",
-			check=True,
+			[PIN, "-t", inscount, "--", filename, passwd],
+			check=False,
 			stdout=subprocess.PIPE,
 			stderr=subprocess.PIPE
 		)
-		with open("inscount.out") as f:
-			output = f.read()
-			return int(output.partition(" ")[2])
-	except subprocess.CalledProcessError as e:
-		print("Stdout:")
-		print(e.stdout.decode())
-		print("Stderr:")
-		print(e.stderr.decode())
-		raise
+	else:
+		subprocess.run(
+			[PIN, "-t", inscount, "--", filename],
+			input=passwd.encode() + b"\n",
+			check=False,
+			stdout=subprocess.PIPE,
+			stderr=subprocess.PIPE
+		)
+	with open("inscount.out") as f:
+		output = f.read()
+		return int(output.partition(" ")[2])
 
 def detect_length(filename, inscount_file, max_len, symbol="-", argv=False):
 	Initialdifference = 0
@@ -218,8 +212,11 @@ if __name__ == '__main__':
 	expression = args.expression.strip()
 	detect = args.detect
 	argv = args.argv
-	filename = str(args.filename.resolve())
-	
+	filename = args.filename.resolve()
+	if not filename.exists():
+		print("File does not exist")
+		sys.exit()
+	filename = str(filename)
 	if len(initpass) >= passlen:
 		print("The length of init password must be less than password length.")
 		sys.exit()
