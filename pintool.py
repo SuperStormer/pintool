@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-#coding: utf8
 #
 #prog_name= 'pintool.py'
 #prog_version = '0.3'

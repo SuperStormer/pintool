@@ -19,35 +19,38 @@ INSCOUNT64 = "./pin-2.13-62732-gcc.4.4.7-linux/source/tools/ManualExamples/obj-i
 
 
 ```sh
-$python pintool.py 
-usage: pintool.py [-h] [-e] [-l LEN] [-c NUMBER] [-b CHARACTER] [-a ARCH]
-                   [-i INITPASS] [-s SIMBOL] [-d EXPRESSION]
-                   Filename
+$python3 pintool.py 
+usage: pintool.py [-h] [-d] [-l LEN] [-c NUMBER] [-b CHARACTER] [-a {32,64}] [-i INITPASS] [-s SYMBOL] [-e EXPRESSION] [-r] [-g] filename
 
 positional arguments:
-  Filename       Program for playing with Pin Tool
+  filename              Program for playing with Pin Tool
 
 optional arguments:
-  -h, --help     show this help message and exit
-  -e             Study the password length, for example -e -l 40, with 40
-                 characters
-  -l LEN         Length of password (Default: 10 )
-  -c NUMBER      Charset definition for brute force (1-Lowercase, 2-Uppecase,
-                 3-Numbers, 4-Hexadecimal, 5-Punctuation, 6-All)
-  -b CHARACTER   Add characters for the charset, example -b _-
-  -a ARCH        Program architecture 32 or 64 bits, -a 32 or -a 64
-  -i INITPASS    Inicial password characters, example -i CTF{
-  -s SIMBOL      Simbol for complete all password (Default: _ )
-  -d EXPRESSION  Difference between instructions that are successful or not
-                 (Default: != 0, example -d '== -12', -d '=> 900', -d '<= 17'
-                 or -d '!= 32')
+  -h, --help            show this help message and exit
+  -d, --detect          Detect the password length. For example -d -l 40, with 40 characters
+  -l LEN                Length of password
+  -c NUMBER, --charset NUMBER
+                        Charset definition for brute force (0-Default, 1-Lowercase, 2-Uppercase, 3-Numbers, 4-Hexadecimal, 5-Punctuation,
+                        6-Printable)
+  -b CHARACTER, --character CHARACTER
+                        Add characters for the charset. For example, -b _-
+  -a {32,64}, --arch {32,64}
+                        Program architecture
+  -i INITPASS, --initpass INITPASS
+                        Initial password characters. For example, -i CTF{
+  -s SYMBOL, --symbol SYMBOL
+                        Symbol used as password placeholder
+  -e EXPRESSION, --expression EXPRESSION
+                        Difference between instructions that are successful or not. For example: -e '== -12', -e '=> 900', -e '<= 17' or -e '!= 32'
+  -r                    Reverse order, bruteforcing starting from the last character
+  -g, --argv            Pass argument via command-line arguments instead of stdin.
 ```
 
 
 ### Examples
 **Baleful - picoCTF 2014**
 ```sh
-$python3 pintool.py -l 30 -c 1,2,3 -b _{} -s - examples/baleful
+$ python3 pintool.py -l 30 -c 1,2,3 -b _{} -s - examples/baleful
 p----------------------------- = 763799 difference -12 instructions
 pa---------------------------- = 763787 difference -12 instructions
 pac--------------------------- = 763775 difference -12 instructions
