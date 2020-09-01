@@ -198,6 +198,9 @@ def cleanup():
 	path = Path("inscount.out")
 	if path.exists():
 		path.unlink()
+	path = Path("pin.log")
+	if path.exists():
+		path.unlink()
 
 if __name__ == '__main__':
 	
