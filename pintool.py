@@ -49,7 +49,7 @@ def get_args():
 	parser.add_argument(
 		'-i', "--initpass", default='', help='Initial password characters. For example, -i CTF{'
 	)
-	parser.add_argument('-s', "--symbol", default='*', help='Symbol used as password placeholder')
+	parser.add_argument('-s', "--symbol", default='-', help='Symbol used as password placeholder')
 	parser.add_argument(
 		'-e',
 		"--expression",
@@ -155,7 +155,7 @@ def solve(
 		}[comparison]
 	except KeyError:
 		print("Unknown value for -d option")
-		sys.exit()
+		sys.exit(1)
 	for i in range(initlen, passlen):
 		
 		if args.reverse:
@@ -190,7 +190,7 @@ def solve(
 				break
 		else:
 			print("Password not found, try to change charset...")
-			sys.exit()
+			sys.exit(1)
 	
 	return password
 
@@ -213,20 +213,20 @@ if __name__ == '__main__':
 	argv = args.argv
 	filename = args.filename.resolve()
 	if not filename.exists():
-		print("File does not exist")
-		sys.exit()
+		print("File does not exist.")
+		sys.exit(1)
 	filename = str(filename)
 	if len(initpass) >= passlen:
 		print("The length of init password must be less than password length.")
-		sys.exit()
+		sys.exit(1)
 	
 	if passlen > 64:
 		print("The password must be less than 64 characters.")
-		sys.exit()
+		sys.exit(1)
 	
 	if len(symbfill) > 1:
 		print("Only one symbol is allowed.")
-		sys.exit()
+		sys.exit(1)
 	
 	if arch == "32":
 		inscount_file = INSCOUNT32
@@ -234,7 +234,7 @@ if __name__ == '__main__':
 		inscount_file = INSCOUNT64
 	else:
 		print("Unknown architecture")
-		sys.exit()
+		sys.exit(1)
 	
 	atexit.register(cleanup)
 	
