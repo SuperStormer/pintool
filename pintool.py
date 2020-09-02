@@ -14,10 +14,9 @@ import sys
 from pathlib import Path
 
 #configuration by the user
-directory = Path(__file__).parent
-PIN = directory.joinpath("pin/pin")
-INSCOUNT32 = directory.joinpath("pin/source/tools/ManualExamples/obj-ia32/inscount0.so")
-INSCOUNT64 = directory.joinpath("pin/source/tools/ManualExamples/obj-intel64/inscount0.so")
+PIN = Path("~/pin/pin").resolve()
+INSCOUNT32 = Path("~/pin/source/tools/ManualExamples/obj-ia32/inscount0.so").resolve()
+INSCOUNT64 = Path("~/pin/source/tools/ManualExamples/obj-intel64/inscount0.so").resolve()
 
 def get_args():
 	
