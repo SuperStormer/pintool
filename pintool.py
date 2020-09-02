@@ -14,9 +14,9 @@ import sys
 from pathlib import Path
 
 #configuration by the user
-PIN = Path("~/pin/pin").resolve()
-INSCOUNT32 = Path("~/pin/source/tools/ManualExamples/obj-ia32/inscount0.so").resolve()
-INSCOUNT64 = Path("~/pin/source/tools/ManualExamples/obj-intel64/inscount0.so").resolve()
+PIN = Path("~/pin/pin").expanduser()
+INSCOUNT32 = Path("~/pin/source/tools/ManualExamples/obj-ia32/inscount0.so").expanduser()
+INSCOUNT64 = Path("~/pin/source/tools/ManualExamples/obj-intel64/inscount0.so").expanduser()
 
 def get_args():
 	
