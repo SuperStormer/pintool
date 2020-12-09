@@ -14,9 +14,9 @@ import sys
 from pathlib import Path
 
 #configuration by the user
-PIN = Path("~/pin/pin").expanduser()
-INSCOUNT32 = Path("~/pin/source/tools/ManualExamples/obj-ia32/inscount0.so").expanduser()
-INSCOUNT64 = Path("~/pin/source/tools/ManualExamples/obj-intel64/inscount0.so").expanduser()
+PIN = Path("/opt/pin/pin").expanduser()
+INSCOUNT32 = Path("/opt/pin/source/tools/ManualExamples/obj-ia32/inscount0.so").expanduser()
+INSCOUNT64 = Path("/opt/pin/source/tools/ManualExamples/obj-intel64/inscount0.so").expanduser()
 
 def get_args():
 	
@@ -73,7 +73,7 @@ def get_args():
 		default=False,
 		help='Pass argument via command-line arguments instead of stdin.'
 	)
-	parser.add_argument('filename', type=Path, help='Program for playing with Pin Tool')
+	parser.add_argument('filename', type=Path, help='Program for playing with Pin')
 	
 	if len(sys.argv) < 2:
 		parser.print_help()
@@ -115,17 +115,17 @@ def pin(filename, inscount, passwd, argv=False):
 		return int(output.partition(" ")[2])
 
 def detect_length(filename, inscount_file, max_len, symbol="-", argv=False):
-	Initialdifference = 0
+	initial = 0
 	for i in range(1, max_len + 1):
 		password = symbol * i
 		inscount = pin(filename, inscount_file, password, argv)
 		
-		if Initialdifference == 0:
-			Initialdifference = inscount
+		if initial == 0:
+			initial = inscount
 		
 		print(
 			"%s = with %d characters difference %d instructions" %
-			(password, i, inscount - Initialdifference)
+			(password, i, inscount - initial)
 		)
 
 def add_char(initpass, char):
@@ -240,10 +240,10 @@ if __name__ == '__main__':
 	
 	atexit.register(cleanup)
 	
-	if detect is True:
+	if detect:
 		detect_length(filename, inscount_file, passlen, symbfill, argv)
-		sys.exit()
-	password = solve(
-		filename, inscount_file, passlen, charset, expression, symbfill, initpass, argv
-	)
-	print("Password: ", password)
+	else:
+		password = solve(
+			filename, inscount_file, passlen, charset, expression, symbfill, initpass, argv
+		)
+		print("Password: ", password)

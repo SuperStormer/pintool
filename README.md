@@ -1,3 +1,5 @@
+# This is deprecated, please use pintool.py from [pyutils](https://github.com/SuperStormer/pyutils) instead
+
 # Pintool
 
 This tool can be useful for solving some reversing challenges in CTFs events. Implements the technique described here:
